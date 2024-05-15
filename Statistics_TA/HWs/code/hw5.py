@@ -14,46 +14,16 @@ def p1_2(A: np.ndarray, B: np.ndarray):
 
     return round(var_A, 2), round(var_B, 2)
 
-def p1_3(len_A, len_B, mean_A, mean_B, D0, Sp, siginificant_level, df, is_two_tailed=True):
-    SE = Sp * np.sqrt(1 / len_A + 1 / len_B)
-
+def p1_3(mean_A, mean_B, D0, SE, siginificant_level, df, is_two_tailed=True):
     t_stat = (mean_A - mean_B - D0) / SE
     if is_two_tailed:
-        if t_stat < 0:
-            p_value = 2 * t_table.cdf(t_stat, df)
-        else:
-            p_value = 2 * (1 - t_table.cdf(t_stat, df))
+        p_value = 2 * (1 - t_table.cdf(abs(t_stat), df))
     else:
-        if t_stat < 0:
-            p_value = t_table.cdf(t_stat, df)
-        else:
-            p_value = 1 - t_table.cdf(t_stat, df)
+        p_value = 1 - t_table.cdf(abs(t_stat), df)
 
     t_critical = t_table.ppf(1 - siginificant_level, df) if is_two_tailed else t_table.ppf(1 - siginificant_level / 2, df)
     margin_err = t_critical * SE
 
-    lower = (mean_A - mean_B - D0) - margin_err
-    upper = (mean_A - mean_B - D0) + margin_err
-
-    return lower, upper, t_stat, p_value
-
-def p1_3(len_A, len_B, mean_A, mean_B, D0, var_A, var_B, siginificant_level, df, is_two_tailed=True):
-    SE = np.sqrt(var_A / len_A + var_B / len_B)
-    t_stat = (mean_A - mean_B - D0) / SE
-
-    if is_two_tailed:
-        if t_stat < 0:
-            p_value = 2 * t_table.cdf(t_stat, df)
-        else:
-            p_value = 2 * (1 - t_table.cdf(t_stat, df))
-    else:
-        if t_stat < 0:
-            p_value = t_table.cdf(t_stat, df)
-        else:
-            p_value = 1 - t_table.cdf(t_stat, df)
-
-    t_critical = t_table.ppf(1 - siginificant_level, df) if is_two_tailed else t_table.ppf(1 - siginificant_level / 2, df)
-    margin_err = t_critical * SE
     lower = (mean_A - mean_B - D0) - margin_err
     upper = (mean_A - mean_B - D0) + margin_err
 
@@ -77,15 +47,17 @@ def p1():
     if var_A == var_B:
         df = len_A + len_B - 2
         Sp = np.sqrt(((len_A - 1) * var_A + (len_B - 1) * var_B) / df)
+        SE = Sp * np.sqrt(1 / len_A + 1 / len_B)
         print("Pooled standard deviation:", round(Sp, 2))
 
-        lower, upper, t, p = p1_3(len_A, len_B, mean_A, mean_B, 0, Sp, 0.05, df)
+        lower, upper, t, p = p1_3(mean_A, mean_B, 0, SE, 0.05, df)
     else:
         c = (var_A / len_A) / (var_A / len_A + var_B / len_B)
         df = (len_A - 1) * (len_B - 1) / \
             ((1 - c) ** 2 * (len_A - 1) + c ** 2 * (len_B - 1))
         # df < (n1 + n2 - 2) if var_A != var_B
-        lower, upper, t, p = p1_3(len_A, len_B, mean_A, mean_B, 0, var_A, var_B, 0.05, df)
+        SE = np.sqrt(var_A / len_A + var_B / len_B)
+        lower, upper, t, p = p1_3(mean_A, mean_B, 0, SE, 0.05, df)
 
     print("Confidence interval:", round(lower, 2), round(upper, 2)) 
     print("t-statistic:", t)
